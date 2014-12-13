@@ -30,7 +30,7 @@ type SlackMessage struct {
 }
 
 func NewSlackConfig() *SlackConfig {
-	return &Gopher{token: "xoxb-3211150999-AlHt3inJ1QAvTrzIYuoD2W1B"}
+	return &Gopher{token: ""}
 }
 
 func Connect(config SlackConfig) ws websocket, err error {
