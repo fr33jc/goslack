@@ -78,7 +78,7 @@ func main() {
 	var message SlackMessage
 	message.Id += 1
 	message.Type = "message"
-	message.Channel = "C0369QNBH"
+	message.Channel = ""
 	message.Text = "hello slack"
 	b_message, err := json.Marshal(message)
 	if err != nil {
