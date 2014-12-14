@@ -1,6 +1,7 @@
 package goslack
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"golang.org/x/net/websocket"
 )
@@ -71,4 +73,12 @@ func SendMessage(ws *websocket.Conn, msg SlackMessage) error {
 	}
 
 	return nil
+}
+
+func ReadChat(ws *websocket.Conn, ch chan string) error {
+	var buffer bytes.Buffer
+	for {
+		ch <- scanner.Text()
+		time.Sleep(time.Second * 1)
+	}
 }
