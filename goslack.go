@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"golang.org/x/net/websocket"
 )
@@ -68,10 +69,14 @@ func SendMessage(ws *websocket.Conn, msg SlackMessage) error {
 	return nil
 }
 
-/* func ReadChat(ws *websocket.Conn, ch chan string) error {
-	var buffer bytes.Buffer
+func ReadMessages(ws *websocket.Conn, ch chan SlackResponse) error {
+	var msg SlackResponse
 	for {
-				ch <- scanner.Text()
-		time.Sleep(time.Second * 1)
+		if err := websocket.JSON.Receive(ws, &msg); err != nil {
+			thisError := fmt.Sprintln("Could not receive the message. ERR: %v", err)
+			return errors.New(thisError)
+		}
+		time.Sleep(1)
+		ch <- msg
 	}
-}*/
+}
