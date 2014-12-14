@@ -57,3 +57,18 @@ func Connect(token string) (*websocket.Conn, error) {
 
 	return ws, nil
 }
+
+func SendMessage(ws *websocket.Conn, msg SlackMessage) error {
+	b_message, err := json.Marshal(msg)
+	if err != nil {
+		thisError := fmt.Sprintln("Could not marshal the message. ERR: %v", err)
+		return errors.New(thisError)
+	}
+	_, err = ws.Write(b_message)
+	if err != nil {
+		thisError := fmt.Sprintln("Couldn't write message. ERR: %v", err)
+		return errors.New(thisError)
+	}
+
+	return nil
+}
