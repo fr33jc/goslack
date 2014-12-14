@@ -25,34 +25,35 @@ type SlackMessage struct {
 	Text    string `json:"text"`
 }
 
-func ConnectSlack(token string, ws *websocket.Conn) error {
+func Connect(token string) (*websocket.Conn, error) {
 	resp, err := http.PostForm("https://slack.com/api/rtm.start", url.Values{"token": {token}})
 	if err != nil {
 		thisError := fmt.Sprintf("Could't start real time slack api. ERR: %v", err)
-		return errors.New(thisError)
+		return nil, errors.New(thisError)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't read response body. ERR: %v", err)
-		return errors.New(thisError)
+		return nil, errors.New(thisError)
 	}
 
 	var sr SlackResponse
 	err = json.Unmarshal(body, &sr)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't decode json. ERR: %v", err)
-		return errors.New(thisError)
+		return nil, errors.New(thisError)
 	}
 
 	splitUrl := strings.Split(sr.Url, "/")
 	splitUrl[2] = splitUrl[2] + ":443"
 	sr.Url = strings.Join(splitUrl, "/")
 
-	ws, err = websocket.Dial(sr.Url, "", "http://localhost/")
+	ws, err := websocket.Dial(sr.Url, "", "http://localhost/")
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't dial websocket. ERR: %v", err)
-		return errors.New(thisError)
+		return nil, errors.New(thisError)
 	}
-	return nil
+
+	return ws, nil
 }
