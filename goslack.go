@@ -19,11 +19,27 @@ type SlackResponse struct {
 	Url     string        `json:"url"`
 }
 
-type SlackMessage struct {
+type MessageSend struct {
 	Id      int    `json:"id"`
 	Type    string `json:"type"`
 	Channel string `json:"channel"`
 	Text    string `json:"text"`
+}
+
+type MessageRecv struct {
+	Type    string `json:"type"`
+	Channel string `json:"channel"`
+	User    string `json:"user"`
+	Ts      string `json:"ts"`
+	Text    string `json:"text"`
+}
+
+func (m *MessageSend) String() string {
+	return fmt.Sprintf("{id:%v, type:%v. channel:%v, text:%v}", m.Id, m.Type, m.Channel, m.Text)
+}
+
+func (m *MessageRecv) String() string {
+	return fmt.Sprintf("{type:%v. channel:%v, user:%v, ts:%v, text:%v}", m.Type, m.Channel, m.User, m.Ts, m.Text)
 }
 
 func Connect(token string) (*websocket.Conn, error) {
@@ -59,7 +75,7 @@ func Connect(token string) (*websocket.Conn, error) {
 	return ws, nil
 }
 
-func SendMessage(ws *websocket.Conn, msg SlackMessage) error {
+func SendMessage(ws *websocket.Conn, msg MessageSend) error {
 	err := websocket.JSON.Send(ws, msg)
 	if err != nil {
 		thisError := fmt.Sprintln("Could not send the message. ERR: %v", err)
@@ -69,8 +85,8 @@ func SendMessage(ws *websocket.Conn, msg SlackMessage) error {
 	return nil
 }
 
-func ReadMessages(ws *websocket.Conn, ch chan SlackResponse) error {
-	var msg SlackResponse
+func ReadMessages(ws *websocket.Conn, ch chan MessageRecv) error {
+	var msg MessageRecv
 	for {
 		if err := websocket.JSON.Receive(ws, &msg); err != nil {
 			thisError := fmt.Sprintln("Could not receive the message. ERR: %v", err)
@@ -78,5 +94,6 @@ func ReadMessages(ws *websocket.Conn, ch chan SlackResponse) error {
 		}
 		time.Sleep(1)
 		ch <- msg
+		msg = MessageRecv{}
 	}
 }
