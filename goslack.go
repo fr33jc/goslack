@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type SlackResponse struct {
+type Response struct {
 	Ok      bool          `json:"ok"`
 	Members []interface{} `json:"members"`
 	Url     string        `json:"url"`
@@ -55,7 +55,7 @@ func Connect(token string) (*websocket.Conn, error) {
 		return nil, errors.New(thisError)
 	}
 
-	var sr SlackResponse
+	var sr Response
 	err = json.Unmarshal(body, &sr)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't decode json. ERR: %v", err)
