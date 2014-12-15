@@ -62,6 +62,12 @@ func Connect(token string) (*websocket.Conn, error) {
 		return nil, errors.New(thisError)
 	}
 
+	/*
+		Hack because rtm.start returns a
+		websocket URL without the port number
+		on it and websocket.Dial barfs if that
+		port number isn't there.
+	*/
 	splitUrl := strings.Split(sr.Url, "/")
 	splitUrl[2] = splitUrl[2] + ":443"
 	sr.Url = strings.Join(splitUrl, "/")
@@ -86,14 +92,18 @@ func SendMessage(ws *websocket.Conn, msg MessageSend) error {
 }
 
 func ReadMessages(ws *websocket.Conn, ch chan MessageRecv) error {
-	var msg MessageRecv
+	msg := MessageRecv{}
 	for {
 		if err := websocket.JSON.Receive(ws, &msg); err != nil {
 			thisError := fmt.Sprintln("Could not receive the message. ERR: %v", err)
 			return errors.New(thisError)
 		}
-		time.Sleep(1)
-		ch <- msg
-		msg = MessageRecv{}
+		time.Sleep(1) // Give it a rest for a moment
+
+		// Only throw message over the wall if we got something.
+		if (msg != MessageRecv{}) {
+			ch <- msg
+		}
+		msg = MessageRecv{} // Zero out the message so we don't keep sending the same one
 	}
 }
