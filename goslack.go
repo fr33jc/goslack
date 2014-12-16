@@ -12,12 +12,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func (m *MessageSend) String() string {
-	return fmt.Sprintf("{id:%v, type:%v. channel:%v, text:%v}", m.Id, m.Type, m.Channel, m.Text)
-}
-
-func (m *MessageRecv) String() string {
-	return fmt.Sprintf("{type:%v. channel:%v, user:%v, ts:%v, text:%v}", m.Type, m.Channel, m.User, m.Ts, m.Text)
+func (e *Event) String() string {
+	return fmt.Sprintf("{id: %v, type:%v, channel:%v, user:%v, ts:%v, text:%v}", e.Id, e.Type, e.Channel, e.User, e.Ts, e.Text)
 }
 
 func Connect(token string) (*websocket.Conn, error) {
@@ -59,7 +55,7 @@ func Connect(token string) (*websocket.Conn, error) {
 	return ws, nil
 }
 
-func SendMessage(ws *websocket.Conn, msg MessageSend) error {
+func SendMessage(ws *websocket.Conn, msg Event) error {
 	err := websocket.JSON.Send(ws, msg)
 	if err != nil {
 		thisError := fmt.Sprintf("Could not send the message. ERR: %v", err)
@@ -69,10 +65,10 @@ func SendMessage(ws *websocket.Conn, msg MessageSend) error {
 	return nil
 }
 
-func ReadMessages(ws *websocket.Conn) (msg MessageRecv, err error) {
+func ReadMessages(ws *websocket.Conn) (msg Event, err error) {
 
 	if err := websocket.JSON.Receive(ws, &msg); err != nil {
-		return MessageRecv{}, err
+		return Event{}, err
 	}
 
 	return msg, nil
