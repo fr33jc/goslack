@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"golang.org/x/net/websocket"
 )
@@ -84,26 +83,19 @@ func Connect(token string) (*websocket.Conn, error) {
 func SendMessage(ws *websocket.Conn, msg MessageSend) error {
 	err := websocket.JSON.Send(ws, msg)
 	if err != nil {
-		thisError := fmt.Sprintln("Could not send the message. ERR: %v", err)
+		thisError := fmt.Sprintf("Could not send the message. ERR: %v", err)
 		return errors.New(thisError)
 	}
 
 	return nil
 }
 
-func ReadMessages(ws *websocket.Conn, ch chan MessageRecv) error {
-	msg := MessageRecv{}
-	for {
-		if err := websocket.JSON.Receive(ws, &msg); err != nil {
-			thisError := fmt.Sprintln("Could not receive the message. ERR: %v", err)
-			return errors.New(thisError)
-		}
-		time.Sleep(1) // Give it a rest for a moment
+func ReadMessages(ws *websocket.Conn) (msg MessageRecv, err error) {
 
-		// Only throw message over the wall if we got something.
-		if (msg != MessageRecv{}) {
-			ch <- msg
-		}
-		msg = MessageRecv{} // Zero out the message so we don't keep sending the same one
+	if err := websocket.JSON.Receive(ws, &msg); err != nil {
+		thisError := fmt.Sprintf("Could not receive the message. ERR: %v", err)
+		return MessageRecv{}, errors.New(thisError)
 	}
+
+	return msg, nil
 }
