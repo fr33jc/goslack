@@ -1,6 +1,6 @@
 package goslack
 
-import "golang.org/x/net/websocket"
+import "github.com/gorilla/websocket"
 
 type Client struct {
 	MsgId    int

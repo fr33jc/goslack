@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 func (e *Event) String() string {
@@ -46,7 +46,10 @@ func NewClient(token string) (Client, error) {
 	splitUrl[2] = splitUrl[2] + ":443"
 	sr.Url = strings.Join(splitUrl, "/")
 
-	ws, err := websocket.Dial(sr.Url, "", "http://localhost/")
+	var Dialer websocket.Dialer
+	header := make(http.Header)
+	header.Add("Origin", "http://localhost/")
+	ws, resp, err := Dialer.Dial(sr.Url, header)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't dial websocket. ERR: %v", err)
 		return Client{}, errors.New(thisError)
@@ -56,7 +59,7 @@ func NewClient(token string) (Client, error) {
 }
 
 func (c *Client) SendMessage(msg Event) error {
-	err := websocket.JSON.Send(c.Ws, msg)
+	err := c.Ws.WriteJSON(msg)
 	if err != nil {
 		thisError := fmt.Sprintf("Could not send the message. ERR: %v", err)
 		return errors.New(thisError)
@@ -68,7 +71,7 @@ func (c *Client) SendMessage(msg Event) error {
 
 func (c *Client) ReadMessages() (msg Event, err error) {
 
-	if err := websocket.JSON.Receive(c.Ws, &msg); err != nil {
+	if err := c.Ws.ReadJSON(&msg); err != nil {
 		return Event{}, err
 	}
 
