@@ -12,27 +12,6 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type Response struct {
-	Ok      bool          `json:"ok"`
-	Members []interface{} `json:"members"`
-	Url     string        `json:"url"`
-}
-
-type MessageSend struct {
-	Id      int    `json:"id"`
-	Type    string `json:"type"`
-	Channel string `json:"channel"`
-	Text    string `json:"text"`
-}
-
-type MessageRecv struct {
-	Type    string `json:"type"`
-	Channel string `json:"channel"`
-	User    string `json:"user"`
-	Ts      string `json:"ts"`
-	Text    string `json:"text"`
-}
-
 func (m *MessageSend) String() string {
 	return fmt.Sprintf("{id:%v, type:%v. channel:%v, text:%v}", m.Id, m.Type, m.Channel, m.Text)
 }
