@@ -33,7 +33,7 @@ func Connect(token string) (*websocket.Conn, error) {
 		return nil, errors.New(thisError)
 	}
 
-	var sr Response
+	var sr StartResponse
 	err = json.Unmarshal(body, &sr)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't decode json. ERR: %v", err)
