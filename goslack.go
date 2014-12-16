@@ -16,24 +16,24 @@ func (e *Event) String() string {
 	return fmt.Sprintf("{id: %v, type:%v, channel:%v, user:%v, ts:%v, text:%v}", e.Id, e.Type, e.Channel, e.User, e.Ts, e.Text)
 }
 
-func Connect(token string) (*websocket.Conn, error) {
+func NewClient(token string) (Client, error) {
 	resp, err := http.PostForm("https://slack.com/api/rtm.start", url.Values{"token": {token}})
 	if err != nil {
 		thisError := fmt.Sprintf("Could't start real time slack api. ERR: %v", err)
-		return nil, errors.New(thisError)
+		return Client{}, errors.New(thisError)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't read response body. ERR: %v", err)
-		return nil, errors.New(thisError)
+		return Client{}, errors.New(thisError)
 	}
 
 	var sr StartResponse
 	err = json.Unmarshal(body, &sr)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't decode json. ERR: %v", err)
-		return nil, errors.New(thisError)
+		return Client{}, errors.New(thisError)
 	}
 
 	/*
@@ -49,25 +49,26 @@ func Connect(token string) (*websocket.Conn, error) {
 	ws, err := websocket.Dial(sr.Url, "", "http://localhost/")
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't dial websocket. ERR: %v", err)
-		return nil, errors.New(thisError)
+		return Client{}, errors.New(thisError)
 	}
 
-	return ws, nil
+	return Client{1, ws, make([]Event, 0), sr.Self, token}, nil
 }
 
-func SendMessage(ws *websocket.Conn, msg Event) error {
-	err := websocket.JSON.Send(ws, msg)
+func (c *Client) SendMessage(msg Event) error {
+	err := websocket.JSON.Send(c.Ws, msg)
 	if err != nil {
 		thisError := fmt.Sprintf("Could not send the message. ERR: %v", err)
 		return errors.New(thisError)
 	}
+	c.MsgId++
 
 	return nil
 }
 
-func ReadMessages(ws *websocket.Conn) (msg Event, err error) {
+func (c *Client) ReadMessages() (msg Event, err error) {
 
-	if err := websocket.JSON.Receive(ws, &msg); err != nil {
+	if err := websocket.JSON.Receive(c.Ws, &msg); err != nil {
 		return Event{}, err
 	}
 

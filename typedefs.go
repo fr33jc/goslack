@@ -3,10 +3,11 @@ package goslack
 import "golang.org/x/net/websocket"
 
 type Client struct {
-	msgId    int
-	ws       *websocket.Conn
-	messages []Event
-	self     Self
+	MsgId    int
+	Ws       *websocket.Conn
+	Messages []Event
+	Self     Self
+	Token    string
 }
 
 type Self struct {
@@ -28,7 +29,7 @@ type Channel struct {
 	LastRead    string                 `json:"last_read,omitempty"`
 	Latest      Event                  `json:"latest,omitempty"`
 	Members     []string               `json:"members,omitempty"`
-	Purpose     interface{}            `json:"purpose,omitempty"`
+	Purpose     map[string]interface{} `json:"purpose,omitempty"`
 	Topic       map[string]interface{} `json:"topic,omitempty"`
 	UnreadCount int                    `json:"unread_count,omitempty"`
 }
