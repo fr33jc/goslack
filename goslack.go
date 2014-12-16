@@ -93,8 +93,7 @@ func SendMessage(ws *websocket.Conn, msg MessageSend) error {
 func ReadMessages(ws *websocket.Conn) (msg MessageRecv, err error) {
 
 	if err := websocket.JSON.Receive(ws, &msg); err != nil {
-		thisError := fmt.Sprintf("Could not receive the message. ERR: %v", err)
-		return MessageRecv{}, errors.New(thisError)
+		return MessageRecv{}, err
 	}
 
 	return msg, nil
