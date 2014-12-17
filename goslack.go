@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -63,38 +64,17 @@ func (c *Client) PushMessage(channel, message string) {
 	c.MsgId++
 }
 
-/* func (c *Client) PopMessage() {
-	if len(c.Messages) <= 0 {
-		return
-	}
-	c.Messages = c.Messages[:len(c.Messages)-1]
-} */
-
-/* func (c *Client) TopMessage() Event {
-	if len(c.Messages) <= 0 {
-		return Event{}
-	}
-
-	return c.Messages[len(c.Messages)]
-} */
-
-/* func (c *Client) SendMessages() {
-	fmt.Printf("Messages: %v\n", len(c.Messages))
-	if len(c.Messages) > 0 {
-		c.SendMessage(c.TopMessage())
-		c.PopMessage()
-		time.Sleep(time.Second * 1)
-	}
-} */
-
 func (c *Client) SendMessages() {
 	for {
 		select {
 		case msg := <-c.MsgOut:
+			if msgb, _ := json.Marshal(msg); len(msgb) >= 16000 {
+				msg = Event{msg.Id, msg.Type, msg.Channel, fmt.Sprintf("ERROR! Response too large. %v Bytes!", len(msgb)), "", ""}
+			}
 			c.Ws.WriteJSON(msg)
+			time.Sleep(time.Second * 1)
 		}
 	}
-
 }
 
 func (c *Client) ReadMessages() {
