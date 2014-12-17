@@ -71,6 +71,7 @@ func (c *Client) SendMessages() {
 			if msgb, _ := json.Marshal(msg); len(msgb) >= 16000 {
 				msg = Event{msg.Id, msg.Type, msg.Channel, fmt.Sprintf("ERROR! Response too large. %v Bytes!", len(msgb)), "", ""}
 			}
+
 			c.Ws.WriteJSON(msg)
 			time.Sleep(time.Second * 1)
 		}
@@ -80,7 +81,11 @@ func (c *Client) SendMessages() {
 func (c *Client) ReadMessages() {
 	msg := Event{}
 	for {
-		c.Ws.ReadJSON(&msg)
+		err := c.Ws.ReadJSON(&msg)
+		_ = err
+		if err != nil {
+			panic(err)
+		}
 		if (msg != Event{}) {
 			c.MsgIn <- msg
 			msg = Event{}
