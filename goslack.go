@@ -55,25 +55,55 @@ func NewClient(token string) (Client, error) {
 		return Client{}, errors.New(thisError)
 	}
 
-	return Client{1, ws, make([]Event, 0), sr.Self, token}, nil
+	return Client{1, ws, sr.Self, token, make(chan Event), make(chan Event)}, nil
 }
 
-func (c *Client) SendMessage(msg Event) error {
-	err := c.Ws.WriteJSON(msg)
-	if err != nil {
-		thisError := fmt.Sprintf("Could not send the message. ERR: %v", err)
-		return errors.New(thisError)
-	}
+func (c *Client) PushMessage(channel, message string) {
+	c.MsgOut <- Event{c.MsgId, "message", channel, message, "", ""}
 	c.MsgId++
-
-	return nil
 }
 
-func (c *Client) ReadMessages() (msg Event, err error) {
+/* func (c *Client) PopMessage() {
+	if len(c.Messages) <= 0 {
+		return
+	}
+	c.Messages = c.Messages[:len(c.Messages)-1]
+} */
 
-	if err := c.Ws.ReadJSON(&msg); err != nil {
-		return Event{}, err
+/* func (c *Client) TopMessage() Event {
+	if len(c.Messages) <= 0 {
+		return Event{}
 	}
 
-	return msg, nil
+	return c.Messages[len(c.Messages)]
+} */
+
+/* func (c *Client) SendMessages() {
+	fmt.Printf("Messages: %v\n", len(c.Messages))
+	if len(c.Messages) > 0 {
+		c.SendMessage(c.TopMessage())
+		c.PopMessage()
+		time.Sleep(time.Second * 1)
+	}
+} */
+
+func (c *Client) SendMessages() {
+	for {
+		select {
+		case msg := <-c.MsgOut:
+			c.Ws.WriteJSON(msg)
+		}
+	}
+
+}
+
+func (c *Client) ReadMessages() {
+	msg := Event{}
+	for {
+		c.Ws.ReadJSON(&msg)
+		if (msg != Event{}) {
+			c.MsgIn <- msg
+			msg = Event{}
+		}
+	}
 }

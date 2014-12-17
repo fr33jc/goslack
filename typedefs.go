@@ -3,11 +3,12 @@ package goslack
 import "github.com/gorilla/websocket"
 
 type Client struct {
-	MsgId    int
-	Ws       *websocket.Conn
-	Messages []Event
-	Self     Self
-	Token    string
+	MsgId  int
+	Ws     *websocket.Conn
+	Self   Self
+	Token  string
+	MsgIn  chan Event
+	MsgOut chan Event
 }
 
 type Self struct {
