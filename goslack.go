@@ -82,7 +82,6 @@ func (c *Client) ReadMessages() {
 	msg := Event{}
 	for {
 		err := c.Ws.ReadJSON(&msg)
-		_ = err
 		if err != nil {
 			panic(err)
 		}
