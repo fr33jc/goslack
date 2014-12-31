@@ -4,9 +4,9 @@ import "github.com/gorilla/websocket"
 
 type Client struct {
 	MsgId  int
-	Ws     *websocket.Conn
+	ws     *websocket.Conn
 	Self   Self
-	Token  string
+	token  string
 	MsgIn  chan Event
 	MsgOut chan Event
 }

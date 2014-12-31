@@ -17,24 +17,24 @@ func (e *Event) String() string {
 	return fmt.Sprintf("{id: %v, type:%v, channel:%v, user:%v, ts:%v, text:%v}", e.Id, e.Type, e.Channel, e.User, e.Ts, e.Text)
 }
 
-func NewClient(token string) (Client, error) {
+func NewClient(token string) (*Client, error) {
 	resp, err := http.PostForm("https://slack.com/api/rtm.start", url.Values{"token": {token}})
 	if err != nil {
 		thisError := fmt.Sprintf("Could't start real time slack api. ERR: %v", err)
-		return Client{}, errors.New(thisError)
+		return nil, errors.New(thisError)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't read response body. ERR: %v", err)
-		return Client{}, errors.New(thisError)
+		return nil, errors.New(thisError)
 	}
 
 	var sr StartResponse
 	err = json.Unmarshal(body, &sr)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't decode json. ERR: %v", err)
-		return Client{}, errors.New(thisError)
+		return nil, errors.New(thisError)
 	}
 
 	/*
@@ -53,10 +53,14 @@ func NewClient(token string) (Client, error) {
 	ws, resp, err := Dialer.Dial(sr.Url, header)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't dial websocket. ERR: %v", err)
-		return Client{}, errors.New(thisError)
+		return nil, errors.New(thisError)
 	}
 
-	return Client{1, ws, sr.Self, token, make(chan Event), make(chan Event)}, nil
+	client := Client{1, ws, sr.Self, token, make(chan Event), make(chan Event)}
+	go client.SendMessages()
+	go client.ReadMessages()
+
+	return &client, nil
 }
 
 func (c *Client) PushMessage(channel, message string) {
@@ -72,7 +76,7 @@ func (c *Client) SendMessages() {
 				msg = Event{msg.Id, msg.Type, msg.Channel, fmt.Sprintf("ERROR! Response too large. %v Bytes!", len(msgb)), "", ""}
 			}
 
-			c.Ws.WriteJSON(msg)
+			c.ws.WriteJSON(msg)
 			time.Sleep(time.Second * 1)
 		}
 	}
@@ -81,7 +85,7 @@ func (c *Client) SendMessages() {
 func (c *Client) ReadMessages() {
 	msg := Event{}
 	for {
-		err := c.Ws.ReadJSON(&msg)
+		err := c.ws.ReadJSON(&msg)
 		if err != nil {
 			panic(err)
 		}
@@ -90,4 +94,8 @@ func (c *Client) ReadMessages() {
 			msg = Event{}
 		}
 	}
+}
+
+func (c *Client) Close() {
+	c.ws.Close()
 }
