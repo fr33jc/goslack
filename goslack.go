@@ -57,8 +57,8 @@ func NewClient(token string) (*Client, error) {
 	}
 
 	client := Client{1, ws, sr.Self, token, make(chan Event), make(chan Event)}
-	go client.SendMessages()
-	go client.ReadMessages()
+	go client.sendMessages()
+	go client.readMessages()
 
 	return &client, nil
 }
@@ -68,7 +68,7 @@ func (c *Client) PushMessage(channel, message string) {
 	c.MsgId++
 }
 
-func (c *Client) SendMessages() {
+func (c *Client) sendMessages() {
 	for {
 		select {
 		case msg := <-c.MsgOut:
@@ -82,7 +82,7 @@ func (c *Client) SendMessages() {
 	}
 }
 
-func (c *Client) ReadMessages() {
+func (c *Client) readMessages() {
 	msg := Event{}
 	for {
 		err := c.ws.ReadJSON(&msg)
