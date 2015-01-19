@@ -9,6 +9,7 @@ type Client struct {
 	token  string
 	MsgIn  chan Event
 	MsgOut chan Event
+	reconnectDelay int
 }
 
 type Self struct {

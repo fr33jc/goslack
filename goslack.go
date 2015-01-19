@@ -18,23 +18,38 @@ func (e *Event) String() string {
 }
 
 func NewClient(token string) (*Client, error) {
-	resp, err := http.PostForm("https://slack.com/api/rtm.start", url.Values{"token": {token}})
+	client := Client{token:token, MsgIn:make(chan Event), MsgOut:make(chan Event)}
+	client.Connect()
+	go client.sendMessages()
+	go client.readMessages()
+
+	return &client, nil
+}
+
+func (c *Client) PushMessage(channel, message string) {
+	c.MsgOut <- Event{c.MsgId, "message", channel, message, "", ""}
+	c.MsgId++
+}
+
+func (c *Client) Connect() error {
+	c.MsgId = 1
+	resp, err := http.PostForm("https://slack.com/api/rtm.start", url.Values{"token": {c.token}})
 	if err != nil {
 		thisError := fmt.Sprintf("Could't start real time slack api. ERR: %v", err)
-		return nil, errors.New(thisError)
+		return errors.New(thisError)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't read response body. ERR: %v", err)
-		return nil, errors.New(thisError)
+		return errors.New(thisError)
 	}
 
 	var sr StartResponse
 	err = json.Unmarshal(body, &sr)
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't decode json. ERR: %v", err)
-		return nil, errors.New(thisError)
+		return errors.New(thisError)
 	}
 
 	/*
@@ -51,21 +66,14 @@ func NewClient(token string) (*Client, error) {
 	header := make(http.Header)
 	header.Add("Origin", "http://localhost/")
 	ws, resp, err := Dialer.Dial(sr.Url, header)
+	c.ws = ws
 	if err != nil {
 		thisError := fmt.Sprintf("Couldn't dial websocket. ERR: %v", err)
-		return nil, errors.New(thisError)
+		return errors.New(thisError)
 	}
+	c.Self = sr.Self
 
-	client := Client{1, ws, sr.Self, token, make(chan Event), make(chan Event)}
-	go client.sendMessages()
-	go client.readMessages()
-
-	return &client, nil
-}
-
-func (c *Client) PushMessage(channel, message string) {
-	c.MsgOut <- Event{c.MsgId, "message", channel, message, "", ""}
-	c.MsgId++
+	return nil
 }
 
 func (c *Client) sendMessages() {
@@ -76,7 +84,10 @@ func (c *Client) sendMessages() {
 				msg = Event{msg.Id, msg.Type, msg.Channel, fmt.Sprintf("ERROR! Response too large. %v Bytes!", len(msgb)), "", ""}
 			}
 
-			c.ws.WriteJSON(msg)
+			err := c.ws.WriteJSON(msg)
+			if err != nil {
+				c.Connect()
+			}
 			time.Sleep(time.Second * 1)
 		}
 	}
@@ -87,7 +98,7 @@ func (c *Client) readMessages() {
 	for {
 		err := c.ws.ReadJSON(&msg)
 		if err != nil {
-			panic(err)
+			c.Connect()
 		}
 		if (msg != Event{}) {
 			c.MsgIn <- msg
